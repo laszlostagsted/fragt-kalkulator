@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fragt Kalkulator — CBM & Lademeter</title>
+
+    <!--
+        STYLING: Alt design er skrevet her i <style>-blokken.
+        I større projekter ville man lægge dette i en separat .css-fil.
+    -->
+    <style>
+        /* Grundlæggende reset og skrifttype */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f0f4f8;
+            color: #222;
+            padding: 24px;
+        }
+
+        /* Hovedcontainer — holder alt indhold centreret */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* Overskrift */
+        header {
+            background: #1a3a5c;
+            color: white;
+            padding: 20px 24px;
+            border-radius: 10px 10px 0 0;
+        }
+
+        header h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        header p {
+            font-size: 0.85rem;
+            opacity: 0.75;
+            margin-top: 4px;
+        }
+
+        /* Kort-layout til sektioner */
+        .card {
+            background: white;
+            padding: 24px;
+            border: 1px solid #dde3ea;
+        }
+
+        .card:last-child {
+            border-radius: 0 0 10px 10px;
+        }
+
+        .card h2 {
+            font-size: 1rem;
+            color: #1a3a5c;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e8edf2;
+        }
+
+        /* Fragttype-valg (radio buttons) */
+        .mode-selector {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            padding: 8px 18px;
+            border: 2px solid #c5d0db;
+            border-radius: 20px;
+            background: white;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: #1a3a5c;
+            color: white;
+            border-color: #1a3a5c;
+        }
+
+        /* Tabel til kolli-input */
+        .kolli-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+        }
+
+        .kolli-table th {
+            background: #f0f4f8;
+            padding: 8px 10px;
+            text-align: left;
+            font-weight: 600;
+            color: #555;
+            font-size: 0.8rem;
+            border-bottom: 1px solid #dde3ea;
+        }
+
+        .kolli-table td {
+            padding: 6px 4px;
+            vertical-align: middle;
+        }
+
+        /* Input-felter i tabellen */
+        .kolli-table input[type="number"] {
+            width: 100%;
+            padding: 7px 8px;
+            border: 1px solid #c5d0db;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-align: right;
+            background: #fafbfc;
+            transition: border 0.2s;
+        }
+
+        .kolli-table input[type="number"]:focus {
+            outline: none;
+            border-color: #1a3a5c;
+            background: white;
+        }
+
+        /* Slet-knap per linje */
+        .slet-btn {
+            background: none;
+            border: none;
+            color: #c0392b;
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .slet-btn:hover {
+            background: #fdecea;
+        }
+
+        /* Tilføj kolli-knap */
+        .tilfoej-btn {
+            background: none;
+            border: 2px dashed #c5d0db;
+            color: #666;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            margin-top: 4px;
+            transition: all 0.2s;
+        }
+
+        .tilfoej-btn:hover {
+            border-color: #1a3a5c;
+            color: #1a3a5c;
+        }
+
+        /* Beregn-knap */
+        .beregn-btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background: #1a3a5c;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 16px;
+            transition: background 0.2s;
+        }
+
+        .beregn-btn:hover {
+            background: #14304e;
+        }
+
+        /* Resultater */
+        .resultater {
+            display: none; /* Skjult indtil der beregnes */
+            margin-top: 0;
+        }
+
+        .resultater.synlig {
+            display: block;
+        }
+
+        /* Grid til resultatkortene */
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .result-kort {
+            background: #f8fafc;
+            border: 1px solid #dde3ea;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .result-kort .label {
+            font-size: 0.8rem;
+            color: #777;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .result-kort .vaerdi {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #1a3a5c;
+            margin: 6px 0 4px;
+        }
+
+        .result-kort .enhed {
+            font-size: 0.8rem;
+            color: #999;
+        }
+
+        /* Trafiklys til vejning */
+        .vejning-boks {
+            border-radius: 8px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-weight: 600;
+        }
+
+        .vejning-boks.volumen {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+        }
+
+        .vejning-boks.vaegt {
+            background: #d1e7dd;
+            border: 1px solid #28a745;
+            color: #155724;
+        }
+
+        .vejning-boks .ikon {
+            font-size: 1.6rem;
+        }
+
+        /* Detalje-tabel over kolli */
+        .detalje-tabel {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin-top: 12px;
+        }
+
+        .detalje-tabel th, .detalje-tabel td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #eef0f3;
+            text-align: right;
+        }
+
+        .detalje-tabel th {
+            background: #f0f4f8;
+            font-weight: 600;
+            color: #555;
+            font-size: 0.8rem;
+            text-align: right;
+        }
+
+        .detalje-tabel th:first-child,
+        .detalje-tabel td:first-child {
+            text-align: left;
+        }
+
+        .detalje-tabel tr:last-child td {
+            border-bottom: none;
+            font-weight: 700;
+            background: #f8fafc;
+        }
+
+        /* Info-boks med faktorer */
+        .info-boks {
+            background: #eef3f9;
+            border-left: 4px solid #1a3a5c;
+            padding: 12px 16px;
+            border-radius: 0 6px 6px 0;
+            font-size: 0.85rem;
+            color: #444;
+            margin-top: 16px;
+        }
+
+        .info-boks strong {
+            color: #1a3a5c;
+        }
+
+        /* Responsive: smal skærm */
+        @media (max-width: 600px) {
+            body { padding: 12px; }
+            .mode-selector { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- HEADER -->
+    <header>
+        <h1>📦 Fragt Kalkulator</h1>
+        <p>CBM, Lademeter & Faktureringsvægt — til operativ spedition</p>
+    </header>
+
+    <!-- SEKTION 1: Input -->
+    <div class="card">
+        <h2>1. Vælg fragttype</h2>
+
+        <!--
+            FRAGTTYPE-VALG
+            Faktoren for volumenvægt er forskellig per fragttype:
+            - Luftfragt:  1 CBM = 167 kg  (6.000 cm³ per kg)
+            - Søfragt:    1 CBM = 1.000 kg
+            - Vejfragt:   1 LDM = 1.750 kg
+        -->
+        <div class="mode-selector">
+            <button class="mode-btn active" onclick="vaelgMode('luft', this)">✈️ Luftfragt</button>
+            <button class="mode-btn" onclick="vaelgMode('soe', this)">🚢 Søfragt</button>
+            <button class="mode-btn" onclick="vaelgMode('vej', this)">🚛 Vejfragt</button>
+        </div>
+
+        <h2>2. Indtast kolli</h2>
+
+        <!--
+            KOLLI-TABEL
+            Brugeren indtaster mål i CM og vægt i KG.
+            JavaScript tilføjer og fjerner rækker dynamisk.
+        -->
+        <table class="kolli-table">
+            <thead>
+                <tr>
+                    <th style="width:35px">#</th>
+                    <th>Antal</th>
+                    <th>Længde (cm)</th>
+                    <th>Bredde (cm)</th>
+                    <th>Højde (cm)</th>
+                    <th>Vægt (kg/kollo)</th>
+                    <th style="width:40px"></th>
+                </tr>
+            </thead>
+            <!-- Rækker tilføjes her af JavaScript -->
+            <tbody id="kolli-tbody"></tbody>
+        </table>
+
+        <button class="tilfoej-btn" onclick="tilfoejRaekke()">+ Tilføj kolli</button>
+
+        <button class="beregn-btn" onclick="beregn()">Beregn</button>
+    </div>
+
+    <!-- SEKTION 2: Resultater (skjult indtil beregning) -->
+    <div class="card resultater" id="resultater">
+        <h2>3. Resultat</h2>
+
+        <!-- Oversigt: 3–4 nøgletal -->
+        <div class="result-grid" id="result-grid"></div>
+
+        <!-- Faktureringsvægt: grøn/gul boks -->
+        <div class="vejning-boks" id="vejning-boks"></div>
+
+        <!-- Forklaringsboks med faktorer -->
+        <div class="info-boks" id="info-boks"></div>
+
+        <!-- Detaljeret oversigt per kolli -->
+        <h2 style="margin-top:24px">Detaljer per kollo-linje</h2>
+        <table class="detalje-tabel">
+            <thead>
+                <tr>
+                    <th>Linje</th>
+                    <th>Antal</th>
+                    <th>L×B×H (cm)</th>
+                    <th>CBM/kollo</th>
+                    <th>Total CBM</th>
+                    <th>Total vægt (kg)</th>
+                </tr>
+            </thead>
+            <tbody id="detalje-tbody"></tbody>
+        </table>
+    </div>
+
+</div><!-- /container -->
+
+
+<!--
+    JAVASCRIPT: Her sker al logikken.
+    Tre dele:
+    1. Data — variabler der husker tilstanden
+    2. DOM-funktioner — tilføjer/fjerner HTML dynamisk
+    3. Beregningsfunktioner — matematik
+-->
+<script>
+
+    // ─── 1. DATA ───────────────────────────────────────────────────────────────
+
+    // Aktiv fragttype ('luft', 'soe', 'vej')
+    let aktivMode = 'luft';
+
+    // Faktorer og regler per fragttype
+    const modes = {
+        luft: {
+            navn: 'Luftfragt',
+            // Volumenfaktor: 1 kg = 6000 cm³ → 1 CBM (1.000.000 cm³) = 167 kg
+            cbmTilKg: 167,
+            brugerLDM: false,
+            forklaring: 'Luftfragt: 1 CBM = 167 kg (faktor 6.000 cm³/kg). Chargeable weight = højeste af faktisk vægt og volumenvægt.'
+        },
+        soe: {
+            navn: 'Søfragt',
+            cbmTilKg: 1000,
+            brugerLDM: false,
+            forklaring: 'Søfragt: 1 CBM = 1.000 kg. Chargeable weight = højeste af faktisk vægt og volumenvægt.'
+        },
+        vej: {
+            navn: 'Vejfragt',
+            cbmTilKg: 333,       // CBM til kg ved vejfragt
+            ldmTilKg: 1750,      // 1 LDM = 1.750 kg
+            brugerLDM: true,
+            forklaring: 'Vejfragt: 1 LDM = 1.750 kg | 1 CBM ≈ 333 kg. Chargeable weight = højeste af faktisk vægt, CBM-vægt og LDM-vægt.'
+        }
+    };
+
+    // Tæller til unikke række-ID'er
+    let raekkeId = 0;
+
+
+    // ─── 2. DOM-FUNKTIONER ─────────────────────────────────────────────────────
+
+    // Kør ved start: tilføj én tom række
+    tilfoejRaekke();
+
+    // Skift fragttype når brugeren klikker en knap
+    function vaelgMode(mode, knap) {
+        aktivMode = mode;
+        // Fjern 'active' fra alle knapper, sæt på den klikkede
+        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+        knap.classList.add('active');
+    }
+
+    // Tilføj en ny tom inputrække til tabellen
+    function tilfoejRaekke() {
+        raekkeId++;
+        const id = raekkeId;
+        const tbody = document.getElementById('kolli-tbody');
+
+        // Opret en ny tabelrække med inputfelter
+        const tr = document.createElement('tr');
+        tr.id = 'raekke-' + id;
+        tr.innerHTML = `
+            <td style="color:#999; font-size:0.85rem; text-align:center">${id}</td>
+            <td><input type="number" min="1" value="1" id="antal-${id}" placeholder="1"></td>
+            <td><input type="number" min="0" step="0.1" id="laengde-${id}" placeholder="0"></td>
+            <td><input type="number" min="0" step="0.1" id="bredde-${id}" placeholder="0"></td>
+            <td><input type="number" min="0" step="0.1" id="hoejde-${id}" placeholder="0"></td>
+            <td><input type="number" min="0" step="0.1" id="vaegt-${id}" placeholder="0"></td>
+            <td><button class="slet-btn" onclick="sletRaekke(${id})" title="Slet linje">✕</button></td>
+        `;
+        tbody.appendChild(tr);
+    }
+
+    // Slet en specifik række fra tabellen
+    function sletRaekke(id) {
+        const raekke = document.getElementById('raekke-' + id);
+        if (raekke) raekke.remove();
+    }
+
+
+    // ─── 3. BEREGNING ──────────────────────────────────────────────────────────
+
+    function beregn() {
+        const mode = modes[aktivMode];
+
+        // Saml alle inputrækker fra tabellen
+        const rækker = document.querySelectorAll('#kolli-tbody tr');
+
+        let totalCBM = 0;
+        let totalVægt = 0;
+        let totalLDM = 0;
+        const detaljer = [];
+
+        rækker.forEach((tr, index) => {
+            const id = tr.id.replace('raekke-', '');
+
+            // Læs inputværdier (|| 0 betyder: brug 0 hvis feltet er tomt)
+            const antal   = parseFloat(document.getElementById('antal-' + id)?.value) || 0;
+            const laengde = parseFloat(document.getElementById('laengde-' + id)?.value) || 0;
+            const bredde  = parseFloat(document.getElementById('bredde-' + id)?.value) || 0;
+            const hoejde  = parseFloat(document.getElementById('hoejde-' + id)?.value) || 0;
+            const vaegt   = parseFloat(document.getElementById('vaegt-' + id)?.value) || 0;
+
+            // CBM per enkelt kollo: L × B × H i cm → del med 1.000.000 for at få m³
+            const cbmPerKollo = (laengde * bredde * hoejde) / 1_000_000;
+
+            // Lademeter per enkelt kollo: (L × B) / 2.4 / 100²
+            // (bredde af standard trailer = 2,4 m = 240 cm)
+            const ldmPerKollo = (laengde * bredde) / (240 * 100);
+
+            // Total for hele linjen
+            const linjeCBM  = cbmPerKollo * antal;
+            const linjeVægt = vaegt * antal;
+            const linjeLDM  = ldmPerKollo * antal;
+
+            // Læg til totaler
+            totalCBM  += linjeCBM;
+            totalVægt += linjeVægt;
+            totalLDM  += linjeLDM;
+
+            // Gem detaljer til tabellen
+            detaljer.push({
+                linje: index + 1,
+                antal,
+                maal: `${laengde}×${bredde}×${hoejde}`,
+                cbmPerKollo: cbmPerKollo.toFixed(4),
+                linjeCBM: linjeCBM.toFixed(4),
+                linjeVægt: linjeVægt.toFixed(1)
+            });
+        });
+
+        // Beregn volumenvægt (CBM × kg-faktor)
+        const volumenVægt = totalCBM * mode.cbmTilKg;
+
+        // For vejfragt: beregn også LDM-vægt
+        const ldmVægt = mode.brugerLDM ? totalLDM * mode.ldmTilKg : 0;
+
+        // Chargeable weight = den højeste af faktisk vægt og volumenvægt (og LDM-vægt ved vejfragt)
+        let chargeableVægt = Math.max(totalVægt, volumenVægt);
+        if (mode.brugerLDM) chargeableVægt = Math.max(chargeableVægt, ldmVægt);
+
+        // Afgør om det er volumen eller faktisk vægt der styrer
+        const erVolumen = volumenVægt > totalVægt;
+
+        // ── Vis resultater ──────────────────────────────────────────────────────
+
+        // Resultatkort (øverst)
+        const grid = document.getElementById('result-grid');
+        grid.innerHTML = `
+            <div class="result-kort">
+                <div class="label">Total CBM</div>
+                <div class="vaerdi">${totalCBM.toFixed(3)}</div>
+                <div class="enhed">m³</div>
+            </div>
+            <div class="result-kort">
+                <div class="label">Faktisk vægt</div>
+                <div class="vaerdi">${totalVægt.toFixed(1)}</div>
+                <div class="enhed">kg</div>
+            </div>
+            <div class="result-kort">
+                <div class="label">Volumenvægt</div>
+                <div class="vaerdi">${volumenVægt.toFixed(1)}</div>
+                <div class="enhed">kg</div>
+            </div>
+            ${mode.brugerLDM ? `
+            <div class="result-kort">
+                <div class="label">Lademeter</div>
+                <div class="vaerdi">${totalLDM.toFixed(2)}</div>
+                <div class="enhed">LDM → ${ldmVægt.toFixed(0)} kg</div>
+            </div>` : ''}
+            <div class="result-kort" style="background:#1a3a5c; border-color:#1a3a5c; color:white">
+                <div class="label" style="color:rgba(255,255,255,0.7)">Chargeable weight</div>
+                <div class="vaerdi" style="color:white">${chargeableVægt.toFixed(1)}</div>
+                <div class="enhed" style="color:rgba(255,255,255,0.6)">kg (faktureringsvægt)</div>
+            </div>
+        `;
+
+        // Trafiklys-boks
+        const vejningBoks = document.getElementById('vejning-boks');
+        if (erVolumen) {
+            vejningBoks.className = 'vejning-boks volumen';
+            vejningBoks.innerHTML = `
+                <span class="ikon">⚠️</span>
+                <div>
+                    <strong>Volumen styrer</strong><br>
+                    <span style="font-weight:400; font-size:0.9rem">Volumenvægt (${volumenVægt.toFixed(1)} kg) er højere end faktisk vægt (${totalVægt.toFixed(1)} kg). Du betaler for pladsen, ikke vægten.</span>
+                </div>
+            `;
+        } else {
+            vejningBoks.className = 'vejning-boks vaegt';
+            vejningBoks.innerHTML = `
+                <span class="ikon">✅</span>
+                <div>
+                    <strong>Faktisk vægt styrer</strong><br>
+                    <span style="font-weight:400; font-size:0.9rem">Faktisk vægt (${totalVægt.toFixed(1)} kg) er højere end volumenvægt (${volumenVægt.toFixed(1)} kg).</span>
+                </div>
+            `;
+        }
+
+        // Forklaringsboks
+        document.getElementById('info-boks').innerHTML = `<strong>ℹ️ Formel der bruges:</strong> ${mode.forklaring}`;
+
+        // Detalje-tabel per kolli-linje
+        const detaljeTbody = document.getElementById('detalje-tbody');
+        detaljeTbody.innerHTML = detaljer.map(d => `
+            <tr>
+                <td>Linje ${d.linje}</td>
+                <td>${d.antal}</td>
+                <td>${d.maal} cm</td>
+                <td>${d.cbmPerKollo} m³</td>
+                <td>${d.linjeCBM} m³</td>
+                <td>${d.linjeVægt} kg</td>
+            </tr>
+        `).join('') + `
+            <tr>
+                <td colspan="3"><strong>Total</strong></td>
+                <td></td>
+                <td><strong>${totalCBM.toFixed(4)} m³</strong></td>
+                <td><strong>${totalVægt.toFixed(1)} kg</strong></td>
+            </tr>
+        `;
+
+        // Vis resultatkortet
+        document.getElementById('resultater').classList.add('synlig');
+
+        // Scroll ned til resultaterne
+        document.getElementById('resultater').scrollIntoView({ behavior: 'smooth' });
+    }
+
+</script>
+
+</body>
+</html>
